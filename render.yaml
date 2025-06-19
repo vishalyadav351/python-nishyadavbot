@@ -7,4 +7,4 @@ services:
     envVars:
       - key: TOKEN
         value: '7699013403:AAHJQCq7IoDnXfnQtca2Ttyx5tRAuf-eMkc'
-    healthCheckPath: /
+    healthCheckPath:  /
