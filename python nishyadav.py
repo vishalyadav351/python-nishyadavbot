@@ -1,4 +1,5 @@
 import os
+import random
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -70,8 +71,6 @@ async def listcollabs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("💼 Collabs:\n" + "\n".join(f"{i+1}. {c}" for i, c in enumerate(collabs_db)))
 
 # ========== CAPTION GENERATOR ============
-import random
-
 captions = [
     "Chasing dreams, not people. ✨",
     "Creating moments that matter 💫",
@@ -82,6 +81,14 @@ captions = [
 
 async def caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("💬 Caption Idea:\n" + random.choice(captions))
+
+# ========== BACKGROUND REMINDERS ============
+def send_reminder():
+    print("⏰ Placeholder: Daily reminder (can be expanded later).")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(send_reminder, "interval", hours=24)
+scheduler.start()
 
 # ========== BOT SETUP ============
 app = ApplicationBuilder().token(TOKEN).build()
@@ -94,14 +101,6 @@ app.add_handler(CommandHandler("addcollab", addcollab))
 app.add_handler(CommandHandler("listcollabs", listcollabs))
 app.add_handler(CommandHandler("caption", caption))
 
-# ========== BACKGROUND REMINDERS (Future use) ============
-def send_reminder():
-    print("⏰ This is a placeholder for future reminder features.")
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(send_reminder, "interval", hours=24)
-scheduler.start()
-
 # ========== RUN BOT ============
-print("🚀 Bot is running... (Press Ctrl+C to stop)")
+print("🚀 Nishu's Bot is running... (Press Ctrl+C to stop)")
 app.run_polling()
