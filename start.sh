@@ -1,3 +1,3 @@
 #!/bin/bash
 pip install -r requirements.txt
-python "python nishyadav.py"
+python "python main.py"
