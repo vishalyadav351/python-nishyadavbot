@@ -2,9 +2,9 @@ services:
   - type: web
     name: nishyadavbot
     env: python
-    startCommand: "python nishyadav.py"
+    startCommand: "python 'python nishyadav.py'"
     plan: free
     envVars:
       - key: TOKEN
-        value: '7699013403:AAHJQCq7IoDnXfnQtca2Ttyx5tRAuf-eMkc'
-    healthCheckPath:  /
+        value: '7699013403:AAHJQCq7IoDnXfnQtca2Tfyx5tRAuf-eMkc'
+    healthCheckPath: /
