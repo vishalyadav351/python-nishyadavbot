@@ -2,8 +2,11 @@ services:
  - type: web
    name: nishyadavbot
    env: python
-   region: oregon
+   buildCommand: ""
+   startCommand: "python main.py"
    plan: free
-   buildCommand: "pip install -r requirements.txt"
-   startCommand: "python 'python nishyadav.py'"
-   autoDeploy: true
+   envVars:
+     -key: TOKEN
+     value:
+     "7699013403:AAHJQCq7IoDnXfnQtca2Ttyx5tRAuf-eMkc"
+     healthCheckPath:/
