@@ -147,5 +147,5 @@ def main():
     print(f"Bot is running for {NISHU_NAME} (Created by {CREATOR_NAME})")
     app.run_polling()
 
-if__name=="__main__":
-main()
+if __name__=="__main__":
+    main()
