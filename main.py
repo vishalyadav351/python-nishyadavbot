@@ -1,120 +1,151 @@
 import os
 from datetime import datetime
-from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from apscheduler.schedulers.background import BackgroundScheduler
-import random
 
-# ================= CONFIG ====================
-TOKEN = os.environ.get("TOKEN")
+# ================== CONFIG ==================
+TOKEN = "7699013403:AAHJQCq7IoDnXfnQtca2Ttyx5tRAuf-eMkC"
 CREATOR_NAME = "Vishal"
 NISHU_NAME = "Nishu Yadav"
 
-# ================ FLASK ======================
-app = Flask(_name_)
+# In-memory DBs
+ideas_db = {}
+free_collabs = []
 
-@app.route('/')
-def home():
-    return "🌐 Nishu Bot is Live!"
+# ================== HANDLERS ==================
 
-# ============ TELEGRAM BOT COMMANDS ============
-# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        f"Hello {NISHU_NAME} 👋\n\n"
-        f"This is your personal assistant bot built by {CREATOR_NAME}.\n"
-        f"You can manage your content, collaborations, analytics, captions, and much more!\n\n"
-        f"Type /help to see all features."
+        f"Hello {NISHU_NAME} 👋\n"
+        "I'm your content assistant bot, made by Vishal.\n\n"
+        "Use /help to explore my features."
     )
 
-# /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "✨ Available Commands:\n"
-        "/start - Welcome message\n"
-        "/help - Show this help message\n"
-        "/addidea - Add a new content idea\n"
-        "/listideas - List all saved ideas\n"
-        "/addcollab - Track a brand collaboration\n"
-        "/listcollabs - View all collaborations\n"
-        "/caption - Generate a caption idea"
+        "*Features:*\n"
+        "/idea <topic> - Save a content idea\n"
+        "/ideas - Show saved ideas\n"
+        "/caption <topic> - Generate a caption\n"
+        "/hashtag <topic> - Suggest hashtags\n"
+        "/collab <brand> <amount> <due_date> - Track paid collaboration\n"
+        "/collabs - Show all collabs\n"
+        "/analytics <likes> <comments> <followers> - Get engagement rate\n"
+        "/milestone <number> - Set milestone reminder\n"
+        "/giveaway <desc> - Add giveaway idea\n"
+        "/reply <msg> - Generate auto reply\n"
     )
 
-# ==== CONTENT IDEAS ====
-ideas_db = {}
-
-async def addidea(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    idea = " ".join(context.args)
-    if not idea:
-        await update.message.reply_text("❗ Usage: /addidea your-idea-here")
-        return
-    ideas_db.setdefault(user_id, []).append(idea)
-    await update.message.reply_text("✅ Idea saved successfully.")
-
-async def listideas(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    ideas = ideas_db.get(user_id, [])
-    if not ideas:
-        await update.message.reply_text("📭 You have no saved ideas yet.")
+async def idea(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.args:
+        topic = " ".join(context.args)
+        date = datetime.now().strftime("%Y-%m-%d")
+        ideas_db[topic] = date
+        await update.message.reply_text(f"Idea saved: \"{topic}\" on {date}")
     else:
-        await update.message.reply_text("📝 Your Content Ideas:\n" + "\n".join(f"- {i}" for i in ideas))
+        await update.message.reply_text("Please provide a topic. Example: /idea Travel reel in Goa")
 
-# ==== COLLAB TRACKING ====
-collabs_db = []
-
-async def addcollab(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    details = " ".join(context.args)
-    if not details:
-        await update.message.reply_text("❗ Usage: /addcollab Brand - Amount - DueDate - Status")
-        return
-    collabs_db.append(details)
-    await update.message.reply_text("🤝 Collaboration saved.")
-
-async def listcollabs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not collabs_db:
-        await update.message.reply_text("No collaborations added yet.")
+async def ideas(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not ideas_db:
+        await update.message.reply_text("No ideas saved yet.")
     else:
-        await update.message.reply_text("💼 Collabs:\n" + "\n".join(f"{i+1}. {c}" for i, c in enumerate(collabs_db)))
-
-# ==== CAPTIONS ====
-captions = [
-    "Chasing dreams, not people. ✨",
-    "Creating moments that matter 💫",
-    "Smile, sparkle, slay. 💖",
-    "Your vibe attracts your tribe 🧿",
-    "Turning reels into real love 💕",
-]
+        message = "Saved Ideas:\n"
+        for topic, date in ideas_db.items():
+            message += f"- {topic} (on {date})\n"
+        await update.message.reply_text(message)
 
 async def caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("💬 Caption Idea:\n" + random.choice(captions))
+    if context.args:
+        topic = " ".join(context.args)
+        await update.message.reply_text(
+            f"Caption for {topic}:\n"
+            f"✨ Embrace every moment like it's made for you. #NishuVibes"
+        )
+    else:
+        await update.message.reply_text("Please provide a topic. Example: /caption Beach morning")
 
-# ==== SCHEDULER (Optional Future) ====
-def send_reminder():
-    print("⏰ This is a placeholder for future reminder features.")
+async def hashtag(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.args:
+        topic = " ".join(context.args).lower()
+        hashtags = {
+            "travel": "#travel #wanderlust #explore #NishuTravels",
+            "fashion": "#style #fashionista #OOTD #NishuStyle",
+            "fitness": "#fitgirl #workoutmotivation #NishuFitness",
+        }
+        default = "#contentcreator #reels #NishuYadav"
+        result = hashtags.get(topic, default)
+        await update.message.reply_text(f"Hashtags for {topic}:\n{result}")
+    else:
+        await update.message.reply_text("Please provide a topic. Example: /hashtag fashion")
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(send_reminder, "interval", hours=24)
-scheduler.start()
+async def collab(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) < 3:
+        await update.message.reply_text("Format: /collab <brand> <amount> <due_date>")
+        return
+    brand, amount, due_date = context.args[0], context.args[1], context.args[2]
+    free_collabs.append((brand, amount, due_date))
+    await update.message.reply_text(f"Collab saved: {brand} - ₹{amount} due by {due_date}")
 
-# ==== TELEGRAM BOT INIT ====
-telegram_app = ApplicationBuilder().token(TOKEN).build()
-telegram_app.add_handler(CommandHandler("start", start))
-telegram_app.add_handler(CommandHandler("help", help_command))
-telegram_app.add_handler(CommandHandler("addidea", addidea))
-telegram_app.add_handler(CommandHandler("listideas", listideas))
-telegram_app.add_handler(CommandHandler("addcollab", addcollab))
-telegram_app.add_handler(CommandHandler("listcollabs", listcollabs))
-telegram_app.add_handler(CommandHandler("caption", caption))
+async def collabs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not free_collabs:
+        await update.message.reply_text("No collaborations added yet.")
+        return
+    msg = "📌 Collab Tracker:\n"
+    for brand, amount, due_date in free_collabs:
+        msg += f"- {brand}: ₹{amount}, Due: {due_date}\n"
+    await update.message.reply_text(msg)
 
-# ==== RUN BOTH: Flask for Render + Telegram Polling ====
-if _name_ == '_main_':
-    import threading
+async def analytics(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        likes, comments, followers = map(int, context.args)
+        engagement = ((likes + comments) / followers) * 100
+        await update.message.reply_text(f"📊 Engagement Rate: {engagement:.2f}%")
+    except:
+        await update.message.reply_text("Usage: /analytics <likes> <comments> <followers>")
 
-    # Start Telegram bot in a separate thread
-    threading.Thread(target=telegram_app.run_polling, daemon=True).start()
+async def milestone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Please enter a milestone. Example: /milestone 100000")
+    else:
+        milestone = context.args[0]
+        await update.message.reply_text(f"🎯 Milestone set: {milestone} followers! Keep going, {NISHU_NAME}!")
 
-    # Start Flask server for Render health check
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+async def giveaway(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Usage: /giveaway <desc>")
+    else:
+        idea = " ".join(context.args)
+        await update.message.reply_text(f"🎁 Giveaway idea saved:\n{idea}")
+
+async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Usage: /reply <message>")
+    else:
+        message = " ".join(context.args)
+        await update.message.reply_text(
+            f"Auto-reply suggestion:\nThank you for the love! 💖 Stay tuned for more amazing content. 😊"
+        )
+
+# ================== APP ==================
+
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("idea", idea))
+    app.add_handler(CommandHandler("ideas", ideas))
+    app.add_handler(CommandHandler("caption", caption))
+    app.add_handler(CommandHandler("hashtag", hashtag))
+    app.add_handler(CommandHandler("collab", collab))
+    app.add_handler(CommandHandler("collabs", collabs))
+    app.add_handler(CommandHandler("analytics", analytics))
+    app.add_handler(CommandHandler("milestone", milestone))
+    app.add_handler(CommandHandler("giveaway", giveaway))
+    app.add_handler(CommandHandler("reply", reply))
+
+    print(f"Bot is running for {NISHU_NAME} (Created by {CREATOR_NAME})")
+    app.run_polling()
+
+if _name_ == "_main_":
+    main()
