@@ -1,16 +1,25 @@
 import os
-import random
 from datetime import datetime
+from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
+import random
 
-# ================ CONFIG =================
-TOKEN = "7699013403:AAHJQCq7IoDnXfnQtca2Ttyx5tRAuf-eMkc"
+# ================= CONFIG ====================
+TOKEN = os.environ.get("TOKEN")
 CREATOR_NAME = "Vishal"
 NISHU_NAME = "Nishu Yadav"
 
-# ============ START COMMAND ==============
+# ================ FLASK ======================
+app = Flask(_name_)
+
+@app.route('/')
+def home():
+    return "🌐 Nishu Bot is Live!"
+
+# ============ TELEGRAM BOT COMMANDS ============
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"Hello {NISHU_NAME} 👋\n\n"
@@ -19,7 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Type /help to see all features."
     )
 
-# ============ HELP COMMAND ==============
+# /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "✨ Available Commands:\n"
@@ -29,11 +38,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/listideas - List all saved ideas\n"
         "/addcollab - Track a brand collaboration\n"
         "/listcollabs - View all collaborations\n"
-        "/caption - Generate a caption idea\n"
-        "\nMore features coming soon..."
+        "/caption - Generate a caption idea"
     )
 
-# =========== CONTENT IDEAS =============
+# ==== CONTENT IDEAS ====
 ideas_db = {}
 
 async def addidea(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -53,13 +61,13 @@ async def listideas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("📝 Your Content Ideas:\n" + "\n".join(f"- {i}" for i in ideas))
 
-# ========== COLLABORATION TRACKER ============
+# ==== COLLAB TRACKING ====
 collabs_db = []
 
 async def addcollab(update: Update, context: ContextTypes.DEFAULT_TYPE):
     details = " ".join(context.args)
     if not details:
-        await update.message.reply_text("❗ Usage: /addcollab BrandName - Amount - DueDate - Status")
+        await update.message.reply_text("❗ Usage: /addcollab Brand - Amount - DueDate - Status")
         return
     collabs_db.append(details)
     await update.message.reply_text("🤝 Collaboration saved.")
@@ -70,7 +78,7 @@ async def listcollabs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("💼 Collabs:\n" + "\n".join(f"{i+1}. {c}" for i, c in enumerate(collabs_db)))
 
-# ========== CAPTION GENERATOR ============
+# ==== CAPTIONS ====
 captions = [
     "Chasing dreams, not people. ✨",
     "Creating moments that matter 💫",
@@ -82,25 +90,31 @@ captions = [
 async def caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("💬 Caption Idea:\n" + random.choice(captions))
 
-# ========== BACKGROUND REMINDERS ============
+# ==== SCHEDULER (Optional Future) ====
 def send_reminder():
-    print("⏰ Placeholder: Daily reminder (can be expanded later).")
+    print("⏰ This is a placeholder for future reminder features.")
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(send_reminder, "interval", hours=24)
 scheduler.start()
 
-# ========== BOT SETUP ============
-app = ApplicationBuilder().token(TOKEN).build()
+# ==== TELEGRAM BOT INIT ====
+telegram_app = ApplicationBuilder().token(TOKEN).build()
+telegram_app.add_handler(CommandHandler("start", start))
+telegram_app.add_handler(CommandHandler("help", help_command))
+telegram_app.add_handler(CommandHandler("addidea", addidea))
+telegram_app.add_handler(CommandHandler("listideas", listideas))
+telegram_app.add_handler(CommandHandler("addcollab", addcollab))
+telegram_app.add_handler(CommandHandler("listcollabs", listcollabs))
+telegram_app.add_handler(CommandHandler("caption", caption))
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("help", help_command))
-app.add_handler(CommandHandler("addidea", addidea))
-app.add_handler(CommandHandler("listideas", listideas))
-app.add_handler(CommandHandler("addcollab", addcollab))
-app.add_handler(CommandHandler("listcollabs", listcollabs))
-app.add_handler(CommandHandler("caption", caption))
+# ==== RUN BOTH: Flask for Render + Telegram Polling ====
+if _name_ == '_main_':
+    import threading
 
-# ========== RUN BOT ============
-print("🚀 Nishu's Bot is running... (Press Ctrl+C to stop)")
-app.run_polling()
+    # Start Telegram bot in a separate thread
+    threading.Thread(target=telegram_app.run_polling, daemon=True).start()
+
+    # Start Flask server for Render health check
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
