@@ -2,7 +2,7 @@ services:
   - type: web
     name: nishyadavbot
     env: python
-    startCommand: "python 'python nishyadav.py'"
+    startCommand: "python main.py'"
     plan: free
     envVars:
       - key: TOKEN
